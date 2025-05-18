@@ -70,7 +70,7 @@ class NotesController extends Controller
     public function show(Note $note)
     {
         // Load the note's questions with latest first
-        $noteQuestions = $note->questions()->latest()->get()->map(function ($question) {
+        $noteQuestions = $note->questions()->oldest()->get()->map(function ($question) {
             return [
                 'id' => $question->id,
                 'question' => $question->question,
