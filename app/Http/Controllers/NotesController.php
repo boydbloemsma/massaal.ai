@@ -13,9 +13,9 @@ use Inertia\Inertia;
 
 class NotesController extends Controller
 {
-    public function create()
+    public function index()
     {
-        return Inertia::render('Note/Create');
+        return Inertia::render('Note/Index');
     }
 
     public function store(
@@ -39,32 +39,20 @@ class NotesController extends Controller
         $chunks = $chunkTextAction->handle($text);
 
         // Create note chunks with embeddings
-        foreach ($chunks as $chunk) {
+        foreach ($chunks as $index => $chunk) {
             $embedding = $generateEmbeddingAction->handle($chunk);
 
             $note->chunks()->create([
                 'chunk' => $chunk,
                 'embedding' => $embedding,
             ]);
+
+            if ($index > 2) {
+                break;
+            }
         }
 
         return redirect()->route('notes.show', $note);
-    }
-
-    public function index()
-    {
-        $notes = Note::all()->map(function ($note) {
-            return [
-                'id' => $note->id,
-                'title' => $note->title,
-                'created_at' => $note->created_at,
-                'created_at_human' => $note->created_at->diffForHumans(),
-            ];
-        });
-
-        return Inertia::render('Note/Index', [
-            'notes' => $notes,
-        ]);
     }
 
     public function show(Note $note)
