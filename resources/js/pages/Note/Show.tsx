@@ -24,7 +24,6 @@ interface NoteQuestion {
 interface Props {
     note: Note;
     noteQuestions: NoteQuestion[];
-    allNotes?: Note[];
 }
 
 export default function Show({ note, noteQuestions }: Props) {
@@ -80,9 +79,6 @@ export default function Show({ note, noteQuestions }: Props) {
                                                 <Card className="bg-gray-800 text-white rounded-lg rounded-tr-none p-3 max-w-[80%]">
                                                     <CardContent className="p-0">
                                                         <p>{q.question}</p>
-                                                        <div className="text-xs text-indigo-200 mt-1 text-right">
-                                                            {q.created_at_human}
-                                                        </div>
                                                     </CardContent>
                                                 </Card>
                                             </div>

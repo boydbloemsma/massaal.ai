@@ -15,19 +15,7 @@ class NotesController extends Controller
 {
     public function index()
     {
-        // Get all notes for the sidebar
-        $allNotes = Note::all()->map(function ($note) {
-            return [
-                'id' => $note->id,
-                'title' => $note->title,
-                'created_at' => $note->created_at,
-                'created_at_human' => $note->created_at->diffForHumans(),
-            ];
-        });
-
-        return Inertia::render('Note/Index', [
-            'allNotes' => $allNotes,
-        ]);
+        return Inertia::render('Note/Index');
     }
 
     public function store(
@@ -76,17 +64,6 @@ class NotesController extends Controller
                 'question' => $question->question,
                 'answer' => $question->answer,
                 'created_at' => $question->created_at,
-                'created_at_human' => $question->created_at->diffForHumans(),
-            ];
-        });
-
-        // Get all notes for the sidebar
-        $allNotes = Note::all()->map(function ($note) {
-            return [
-                'id' => $note->id,
-                'title' => $note->title,
-                'created_at' => $note->created_at,
-                'created_at_human' => $note->created_at->diffForHumans(),
             ];
         });
 
@@ -95,10 +72,8 @@ class NotesController extends Controller
                 'id' => $note->id,
                 'title' => $note->title,
                 'created_at' => $note->created_at,
-                'created_at_human' => $note->created_at->diffForHumans(),
             ],
             'noteQuestions' => $noteQuestions,
-            'allNotes' => $allNotes,
         ]);
     }
 
@@ -126,6 +101,6 @@ class NotesController extends Controller
         ]);
 
         // Redirect back to the note's show page with query parameters
-        return Inertia::location(route('notes.show', $note, false) . '?question=' . urlencode($question) . '&answer=' . urlencode($answer));
+        return redirect()->route('notes.show', $note);
     }
 }
