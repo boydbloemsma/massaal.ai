@@ -15,7 +15,19 @@ class NotesController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Note/Index');
+        // Get all notes for the sidebar
+        $allNotes = Note::all()->map(function ($note) {
+            return [
+                'id' => $note->id,
+                'title' => $note->title,
+                'created_at' => $note->created_at,
+                'created_at_human' => $note->created_at->diffForHumans(),
+            ];
+        });
+
+        return Inertia::render('Note/Index', [
+            'allNotes' => $allNotes,
+        ]);
     }
 
     public function store(

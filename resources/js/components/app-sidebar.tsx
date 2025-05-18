@@ -6,11 +6,11 @@ import { Link, usePage } from '@inertiajs/react';
 import AppLogo from './app-logo';
 
 export function AppSidebar() {
-    const { props } = usePage();
+    const { notes } = usePage().props;
 
     // Transform notes data to NavItem format if available
-    const noteItems: NavItem[] = Array.isArray(props?.allNotes)
-        ? props.allNotes.map((note: any) => ({
+    const noteItems: NavItem[] = Array.isArray(notes)
+        ? notes.map((note: any) => ({
             title: note.title,
             href: `/notes/${note.id}`,
         }))

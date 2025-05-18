@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,20 @@ class AppServiceProvider extends ServiceProvider
         $this->configureUrl();
         $this->configureRateLimiters();
         $this->configureGates();
+        $this->handleNotes();
+    }
+
+    private function handleNotes(): void
+    {
+        Inertia::share('notes', function () {
+            $user = Auth::user();
+
+            if (!$user) {
+                return [];
+            }
+
+            return $user->notes()->get();
+        });
     }
 
     private function configureCommands(): void
