@@ -9,7 +9,8 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/', [NotesController::class, 'index']);
+    Route::get('/dashboard', [NotesController::class, 'index'])
+        ->name('dashboard');
 
     Route::post('notes', [App\Http\Controllers\NotesController::class, 'store'])->name('notes.store');
     Route::get('notes/{note}', [App\Http\Controllers\NotesController::class, 'show'])->name('notes.show');

@@ -1,13 +1,13 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 interface Note {
-    id: number;
+    id: string;
     title: string;
     created_at: string;
     created_at_human: string;

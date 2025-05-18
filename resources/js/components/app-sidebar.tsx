@@ -19,7 +19,7 @@ export function AppSidebar() {
     if (noteItems.length === 0) {
         noteItems.push({
             title: 'Add note',
-            href: '/',
+            href: '/dashboard',
         });
     }
 
@@ -29,7 +29,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href="/" prefetch>
+                            <Link href="/dashboard" prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
