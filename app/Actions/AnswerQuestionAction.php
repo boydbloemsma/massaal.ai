@@ -22,8 +22,13 @@ class AnswerQuestionAction
         $context = $relevantChunks->pluck('chunk')->implode("\n\n");
 
         // todo stream this
+        $provider = [Provider::OpenAI, 'gpt-3.5-turbo'];
+        if (app()->environment('local')) {
+            $provider = [Provider::Ollama, 'llama3.2'];
+        }
+
         $response = Prism::text()
-            ->using(Provider::OpenAI, 'gpt-3.5-turbo')
+            ->using(...$provider)
             ->withSystemPrompt('You are a helpful assistant that answers questions based on the provided context. If the answer cannot be found in the context, say "I don\'t have enough information to answer that question."')
             ->withPrompt("Context:\n$context\n\nQuestion: $question")
             ->asText();

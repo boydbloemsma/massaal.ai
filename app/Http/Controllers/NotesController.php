@@ -39,17 +39,13 @@ class NotesController extends Controller
         $chunks = $chunkTextAction->handle($text);
 
         // Create note chunks with embeddings
-        foreach ($chunks as $index => $chunk) {
+        foreach ($chunks as $chunk) {
             $embedding = $generateEmbeddingAction->handle($chunk);
 
             $note->chunks()->create([
                 'chunk' => $chunk,
                 'embedding' => $embedding,
             ]);
-
-            if ($index > 2) {
-                break;
-            }
         }
 
         return redirect()->route('notes.show', $note);

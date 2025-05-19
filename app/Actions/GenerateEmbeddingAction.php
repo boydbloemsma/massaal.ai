@@ -9,8 +9,13 @@ class GenerateEmbeddingAction
 {
     public function handle(string $text): array
     {
+        $provider = [Provider::OpenAI, 'text-embedding-3-small'];
+        if (app()->environment('local')) {
+            $provider = [Provider::Ollama, 'nomic-embed-text'];
+        }
+
         $response = Prism::embeddings()
-            ->using(Provider::OpenAI, 'text-embedding-3-small')
+            ->using(...$provider)
             ->fromInput($text)
             ->asEmbeddings();
 
