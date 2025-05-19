@@ -6,6 +6,7 @@ use App\Actions\AnswerQuestionAction;
 use App\Actions\ChunkTextAction;
 use App\Actions\GenerateEmbeddingAction;
 use App\Http\Requests\ProcessNoteRequest;
+use App\Jobs\GenerateChunkEmbeddingJob;
 use App\Models\Note;
 use App\Models\NoteQuestion;
 use Illuminate\Http\Request;
@@ -21,7 +22,6 @@ class NotesController extends Controller
     public function store(
         ProcessNoteRequest $request,
         ChunkTextAction $chunkTextAction,
-        GenerateEmbeddingAction $generateEmbeddingAction
     ) {
         // Get the validated data
         $validated = $request->validated();
@@ -38,14 +38,9 @@ class NotesController extends Controller
         // Chunk the text
         $chunks = $chunkTextAction->handle($text);
 
-        // Create note chunks with embeddings
+        // Create note chunks and dispatch jobs to generate embeddings
         foreach ($chunks as $chunk) {
-            $embedding = $generateEmbeddingAction->handle($chunk);
-
-            $note->chunks()->create([
-                'chunk' => $chunk,
-                'embedding' => $embedding,
-            ]);
+            GenerateChunkEmbeddingJob::dispatch($note, $chunk);
         }
 
         return redirect()->route('notes.show', $note);
