@@ -4,9 +4,20 @@ import { router, Head } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 import { useStream } from '@laravel/stream-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Note {
     id: string;
@@ -213,6 +224,33 @@ export default function Show({ note, noteQuestions }: Props) {
                 <div className="flex flex-1 flex-col h-full">
                     {/* Chat interface */}
                     <Card className="flex-1 flex flex-col h-full max-h-screen">
+                        {/* Card Header with Delete Button */}
+                        <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                            <h2 className="text-xl font-semibold">{note.title}</h2>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">Delete Note</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the note
+                                            and all associated data including chunks and questions.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => router.delete(`/notes/${note.id}`)}
+                                            className="bg-red-600 hover:bg-red-700"
+                                        >
+                                            Delete
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardHeader>
 
                         {/* Processing Progress */}
                         {!note.processing_complete && (

@@ -135,4 +135,11 @@ class NotesController extends Controller
             ]);
         });
     }
+
+    public function destroy(Note $note): RedirectResponse
+    {
+        $note->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Note deleted successfully.');
+    }
 }

@@ -15,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('notes', [App\Http\Controllers\NotesController::class, 'store'])->name('notes.store');
     Route::get('notes/{note}', [App\Http\Controllers\NotesController::class, 'show'])->name('notes.show');
     Route::post('notes/{note}/ask', [App\Http\Controllers\NotesController::class, 'askQuestion'])->name('notes.ask');
+    Route::delete('notes/{note}', [App\Http\Controllers\NotesController::class, 'destroy'])->name('notes.destroy');
 });
 
 require __DIR__.'/settings.php';

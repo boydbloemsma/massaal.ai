@@ -17,6 +17,16 @@ class Note extends Model
         'processing_complete',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($note) {
+            $note->chunks()->delete();
+            $note->questions()->delete();
+        });
+    }
+
     public function chunks(): HasMany
     {
         return $this->hasMany(NoteChunk::class);
