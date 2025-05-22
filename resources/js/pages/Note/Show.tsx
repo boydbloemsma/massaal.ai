@@ -6,12 +6,17 @@ import { useStream } from '@laravel/stream-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 
 interface Note {
     id: string;
     title: string;
     created_at: string;
     created_at_human: string;
+    processing_complete: boolean;
+    processing_progress: number;
+    processed_chunks: number;
+    total_chunks: number;
 }
 
 interface NoteQuestion {
@@ -157,6 +162,17 @@ export default function Show({ note, noteQuestions }: Props) {
     const [lastQuestion, setLastQuestion] = useState('');
     const [streamingJustFinished, setStreamingJustFinished] = useState(false);
 
+    // Auto-refresh when processing is not complete
+    useEffect(() => {
+        if (!note.processing_complete) {
+            const interval = setInterval(() => {
+                router.reload({ only: ['note'] });
+            }, 1000); // Refresh every 1 second for more fluid updates
+
+            return () => clearInterval(interval);
+        }
+    }, [note.processing_complete]);
+
     const { data, isFetching, isStreaming, send, cancel } = useStream(`/notes/${note.id}/ask`, {
         csrfToken: (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content,
         onFinish: () => {
@@ -198,12 +214,25 @@ export default function Show({ note, noteQuestions }: Props) {
                     {/* Chat interface */}
                     <Card className="flex-1 flex flex-col h-full max-h-screen">
 
+                        {/* Processing Progress */}
+                        {!note.processing_complete && (
+                            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium">Processing file...</span>
+                                    <span className="text-sm">{note.processing_progress}%</span>
+                                </div>
+                                <Progress value={note.processing_progress} className="h-2" />
+                            </div>
+                        )}
+
                         {/* Chat messages */}
                         <CardContent className="flex-1 overflow-y-auto p-4 max-h-[calc(100vh-180px)]">
                             {noteQuestions.length === 0 && !isLoading ? (
                                 <div className="flex items-center justify-center h-full">
                                     <p className="text-center text-gray-500 dark:text-gray-400">
-                                        No questions yet. Ask your first question below.
+                                        {note.processing_complete
+                                            ? "No questions yet. Ask your first question below."
+                                            : "Please wait for the file to be processed before asking questions."}
                                     </p>
                                 </div>
                             ) : (
@@ -233,13 +262,19 @@ export default function Show({ note, noteQuestions }: Props) {
 
                         {/* Ask a question form */}
                         <CardFooter className="p-4 border-sidebar-border/70 dark:border-sidebar-border">
-                            <QuestionForm
-                                onSubmit={handleSubmit}
-                                question={question}
-                                setQuestion={setQuestion}
-                                isLoading={isLoading}
-                                onCancel={cancel}
-                            />
+                            {!note.processing_complete ? (
+                                <div className="w-full">
+                                    {/* Form is disabled during processing */}
+                                </div>
+                            ) : (
+                                <QuestionForm
+                                    onSubmit={handleSubmit}
+                                    question={question}
+                                    setQuestion={setQuestion}
+                                    isLoading={isLoading}
+                                    onCancel={cancel}
+                                />
+                            )}
                         </CardFooter>
                     </Card>
                 </div>

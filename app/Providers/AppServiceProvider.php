@@ -35,7 +35,10 @@ class AppServiceProvider extends ServiceProvider
                 return [];
             }
 
-            return $user->notes()->get();
+            return $user
+                ->notes()
+                ->latest()
+                ->get();
         });
     }
 

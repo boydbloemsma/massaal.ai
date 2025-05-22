@@ -32,5 +32,12 @@ class GenerateChunkEmbeddingJob implements ShouldQueue
             'chunk' => $this->chunk,
             'embedding' => $embedding,
         ]);
+
+        // Check if all chunks have been processed
+        $processedChunksCount = $this->note->chunks()->count();
+
+        if ($processedChunksCount >= $this->note->total_chunks) {
+            $this->note->update(['processing_complete' => true]);
+        }
     }
 }

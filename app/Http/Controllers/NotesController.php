@@ -34,17 +34,19 @@ class NotesController extends Controller
         // Get the validated data
         $validated = $request->validated();
 
-        // Create a new note
-        $note = Note::create([
-            'user_id' => auth()->id(),
-            'title' => $validated['title'],
-        ]);
-
         // Read the text file
         $text = file_get_contents($request->file('text_file')->path());
 
         // Chunk the text
         $chunks = $chunkTextAction->handle($text);
+
+        // Create a new note with total chunks count
+        $note = Note::create([
+            'user_id' => auth()->id(),
+            'title' => $validated['title'],
+            'total_chunks' => count($chunks),
+            'processing_complete' => false,
+        ]);
 
         // Create note chunks and dispatch jobs to generate embeddings
         foreach ($chunks as $chunk) {
@@ -66,11 +68,20 @@ class NotesController extends Controller
             ];
         });
 
+        // Calculate processing progress
+        $processedChunksCount = $note->chunks()->count();
+        $totalChunks = $note->total_chunks;
+        $progress = $totalChunks > 0 ? round(($processedChunksCount / $totalChunks) * 100) : 100;
+
         return Inertia::render('Note/Show', [
             'note' => [
                 'id' => $note->id,
                 'title' => $note->title,
                 'created_at' => $note->created_at,
+                'processing_complete' => $note->processing_complete,
+                'processing_progress' => $progress,
+                'processed_chunks' => $processedChunksCount,
+                'total_chunks' => $totalChunks,
             ],
             'noteQuestions' => $noteQuestions,
         ]);

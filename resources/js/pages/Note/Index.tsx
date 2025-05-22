@@ -59,13 +59,20 @@ export default function Index() {
                                 />
                                 {errors.text_file && <p className="mt-1 text-sm text-red-600">{errors.text_file}</p>}
                             </div>
-                            <div className="flex justify-end">
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                >
-                                    {processing ? 'Uploading...' : 'Upload'}
-                                </Button>
+                            <div className="flex flex-col gap-2">
+                                {processing && (
+                                    <p className="text-sm text-gray-500">
+                                        Your file is being uploaded and processed. You'll be redirected to the note page where you can see the processing progress.
+                                    </p>
+                                )}
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="submit"
+                                        disabled={processing}
+                                    >
+                                        {processing ? 'Uploading...' : 'Upload'}
+                                    </Button>
+                                </div>
                             </div>
                         </form>
                     </CardContent>

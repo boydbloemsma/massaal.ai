@@ -8,7 +8,10 @@ class AskQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $note = $this->route('note');
+
+        // Only authorize if the note's processing is complete
+        return $note && $note->processing_complete;
     }
 
     public function rules(): array
