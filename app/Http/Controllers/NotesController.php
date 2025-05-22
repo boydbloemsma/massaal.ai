@@ -12,7 +12,7 @@ use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\NoteQuestion;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Prism\Prism\Enums\Provider;
@@ -31,13 +31,10 @@ class NotesController extends Controller
         ChunkTextAction $chunkTextAction,
     ): RedirectResponse
     {
-        // Get the validated data
         $validated = $request->validated();
 
-        // Read the text file
         $text = file_get_contents($request->file('text_file')->path());
 
-        // Chunk the text
         $chunks = $chunkTextAction->handle($text);
 
         // Create a new note with total chunks count
@@ -58,6 +55,8 @@ class NotesController extends Controller
 
     public function show(Note $note): Response
     {
+        Gate::authorize('view', $note);
+
         // Load the note's questions with latest first
         $noteQuestions = $note->questions()->oldest()->get()->map(function ($question) {
             return [
@@ -93,6 +92,8 @@ class NotesController extends Controller
         GenerateEmbeddingAction $generateEmbeddingAction
     ): StreamedResponse
     {
+        Gate::authorize('ask', $note);
+
         $question = $request->input('question');
 
         $questionEmbedding = $generateEmbeddingAction->handle($question);
@@ -138,6 +139,8 @@ class NotesController extends Controller
 
     public function destroy(Note $note): RedirectResponse
     {
+        Gate::authorize('delete', $note);
+
         $note->delete();
 
         return redirect()->route('dashboard')->with('success', 'Note deleted successfully.');
