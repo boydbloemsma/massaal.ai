@@ -37,10 +37,12 @@ export default function Show({ note, noteQuestions }: Props) {
 
     const [question, setQuestion] = useState('');
     const [lastQuestion, setLastQuestion] = useState('');
+    const [streamingJustFinished, setStreamingJustFinished] = useState(false);
 
     const { data, isFetching, isStreaming, send, cancel } = useStream(`/notes/${note.id}/ask`, {
         csrfToken: (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content,
         onFinish: () => {
+            setStreamingJustFinished(true);
             router.reload({ only: ['noteQuestions'] });
         },
     });
@@ -56,15 +58,56 @@ export default function Show({ note, noteQuestions }: Props) {
         });
 
         setQuestion('');
+
+        // Scroll to bottom when a new question is submitted
+        if (questionsEndRef.current) {
+            questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+        }
+
+        // Add a small delay to ensure scrolling happens after any DOM updates
+        setTimeout(() => {
+            if (questionsEndRef.current) {
+                questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+            }
+        }, 50);
     };
 
     const questionsEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (questionsEndRef.current) {
-            questionsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            // Use auto behavior for more reliable scrolling
+            questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+
+            // Add a small delay to ensure scrolling happens after any DOM updates
+            const timeoutId = setTimeout(() => {
+                if (questionsEndRef.current) {
+                    questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+                }
+            }, 50);
+
+            return () => clearTimeout(timeoutId);
         }
-    }, [noteQuestions]);
+    }, [noteQuestions, data, isStreaming]);
+
+    // Handle scrolling after router.reload
+    useEffect(() => {
+        if (streamingJustFinished && questionsEndRef.current) {
+            // First immediate scroll without smooth behavior for reliability
+            questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+
+            // Then add a delayed scroll to handle cases where the DOM might not be fully updated
+            const timeoutId = setTimeout(() => {
+                if (questionsEndRef.current) {
+                    questionsEndRef.current.scrollIntoView({ behavior: 'auto' });
+                }
+            }, 100);
+
+            setStreamingJustFinished(false);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [streamingJustFinished]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
