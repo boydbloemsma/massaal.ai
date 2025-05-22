@@ -120,7 +120,7 @@ export default function Show({ note, noteQuestions }: Props) {
 
                         {/* Chat messages */}
                         <CardContent className="flex-1 overflow-y-auto p-4 max-h-[calc(100vh-180px)]">
-                            {noteQuestions.length === 0 ? (
+                            {noteQuestions.length === 0 && !isLoading ? (
                                 <div className="flex items-center justify-center h-full">
                                     <p className="text-center text-gray-500 dark:text-gray-400">
                                         No questions yet. Ask your first question below.

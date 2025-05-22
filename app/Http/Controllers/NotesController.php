@@ -102,7 +102,7 @@ class NotesController extends Controller
 
             $stream = Prism::text()
                 ->using(...$provider)
-                ->withSystemPrompt('You are a helpful assistant that answers questions based on the provided context. If the answer cannot be found in the context, say "I don\'t have enough information to answer that question."')
+                ->withSystemPrompt("Respond using only the context. Be as brief as possible. If the answer isn't in the context, say: 'Not enough info.'")
                 ->withPrompt("Context:\n$context\n\nQuestion: $question")
                 ->asStream();
 
