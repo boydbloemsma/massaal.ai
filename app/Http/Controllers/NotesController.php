@@ -8,9 +8,12 @@ use App\Actions\GenerateEmbeddingAction;
 use App\Http\Requests\ProcessNoteRequest;
 use App\Jobs\GenerateChunkEmbeddingJob;
 use App\Models\Note;
+use App\Models\NoteChunk;
 use App\Models\NoteQuestion;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Prism\Prism\Enums\Provider;
+use Prism\Prism\Prism;
 
 class NotesController extends Controller
 {
@@ -71,7 +74,6 @@ class NotesController extends Controller
     public function askQuestion(
         Request $request,
         Note $note,
-        AnswerQuestionAction $answerQuestionAction,
         GenerateEmbeddingAction $generateEmbeddingAction
     )
     {
@@ -82,16 +84,43 @@ class NotesController extends Controller
         $question = $request->input('question');
 
         $questionEmbedding = $generateEmbeddingAction->handle($question);
-        $answer = $answerQuestionAction->handle($note, $question, $questionEmbedding);
 
-        // Store the question and answer in the database
-        NoteQuestion::create([
-            'note_id' => $note->id,
-            'question' => $question,
-            'answer' => $answer,
-        ]);
+        $relevantChunks = NoteChunk::query()
+            ->where('note_id', $note->id)
+            ->orderByRaw('embedding <=> ?::vector', [json_encode($questionEmbedding)])
+            ->limit(3)
+            ->get();
 
-        // Redirect back to the note's show page with query parameters
-        return redirect()->route('notes.show', $note);
+        // Combine the chunks into context
+        $context = $relevantChunks->pluck('chunk')->implode("\n\n");
+
+        return response()->eventStream(function () use ($note, $context, $question) {
+            $provider = [Provider::OpenAI, 'gpt-3.5-turbo'];
+            if (app()->environment('local')) {
+                $provider = [Provider::Ollama, 'llama3.2'];
+            }
+
+            $stream = Prism::text()
+                ->using(...$provider)
+                ->withSystemPrompt('You are a helpful assistant that answers questions based on the provided context. If the answer cannot be found in the context, say "I don\'t have enough information to answer that question."')
+                ->withPrompt("Context:\n$context\n\nQuestion: $question")
+                ->asStream();
+
+            $answer = '';
+            foreach ($stream as $chunk) {
+                $answer .= $chunk->text;
+                echo $chunk->text;
+
+                ob_flush();
+                flush();
+            }
+
+            // Store the question in the database
+            NoteQuestion::create([
+                'note_id' => $note->id,
+                'question' => $question,
+                'answer' => $answer,
+            ]);
+        });
     }
 }

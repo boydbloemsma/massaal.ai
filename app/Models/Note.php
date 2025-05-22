@@ -10,11 +10,6 @@ class Note extends Model
 {
     use HasUuids;
 
-    protected $fillable = [
-        'user_id',
-        'title',
-    ];
-
     public function chunks(): HasMany
     {
         return $this->hasMany(NoteChunk::class);

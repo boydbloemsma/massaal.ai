@@ -1,7 +1,8 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { useEffect, useRef } from 'react';
+import { router, Head } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import { useStream } from '@laravel/stream-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,15 +35,27 @@ export default function Show({ note, noteQuestions }: Props) {
         },
     ];
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        question: '',
+    const [question, setQuestion] = useState('');
+    const [lastQuestion, setLastQuestion] = useState('');
+
+    const { data, isFetching, isStreaming, send, cancel } = useStream(`/notes/${note.id}/ask`, {
+        csrfToken: (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content,
+        onFinish: () => {
+            router.reload({ only: ['noteQuestions'] });
+        },
     });
+
+    const isLoading = isFetching || isStreaming;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/notes/${note.id}/ask`, {
-            onSuccess: () => reset('question'),
+        setLastQuestion(question);
+
+        send({
+            question,
         });
+
+        setQuestion('');
     };
 
     const questionsEndRef = useRef<HTMLDivElement>(null);
@@ -58,12 +71,12 @@ export default function Show({ note, noteQuestions }: Props) {
             <Head title={note.title} />
             <div className="flex h-full flex-1 gap-4 p-4">
                 {/* Main content */}
-                <div className="flex flex-1 flex-col">
+                <div className="flex flex-1 flex-col h-full">
                     {/* Chat interface */}
-                    <Card className="flex-1 flex flex-col h-full">
+                    <Card className="flex-1 flex flex-col h-full max-h-screen">
 
                         {/* Chat messages */}
-                        <CardContent className="flex-1 overflow-y-auto p-4">
+                        <CardContent className="flex-1 overflow-y-auto p-4 max-h-[calc(100vh-180px)]">
                             {noteQuestions.length === 0 ? (
                                 <div className="flex items-center justify-center h-full">
                                     <p className="text-center text-gray-500 dark:text-gray-400">
@@ -93,6 +106,40 @@ export default function Show({ note, noteQuestions }: Props) {
                                             </div>
                                         </div>
                                     ))}
+
+                                    {/* Loading and streaming indicators */}
+                                    {isLoading && (
+                                        <div className="space-y-3">
+                                            {/* User question */}
+                                            <div className="flex justify-end">
+                                                <Card className="bg-gray-800 text-white rounded-lg rounded-tr-none p-3 max-w-[80%]">
+                                                    <CardContent className="p-0">
+                                                        <p>{lastQuestion}</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
+
+                                            {/* AI answer - loading or streaming */}
+                                            <div className="flex justify-start">
+                                                <Card className="bg-gray-100 dark:bg-gray-800 rounded-lg rounded-tl-none p-3 max-w-[80%]">
+                                                    <CardContent className="p-0">
+                                                        {isFetching && !isStreaming ? (
+                                                            <div className="flex items-center space-x-2">
+                                                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                                <p>Loading...</p>
+                                                            </div>
+                                                        ) : (
+                                                            <p>{data}</p>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div ref={questionsEndRef} />
                                 </div>
                             )}
@@ -106,26 +153,38 @@ export default function Show({ note, noteQuestions }: Props) {
                                         id="question"
                                         className="resize-none"
                                         placeholder="Ask a question about this note..."
-                                        value={data.question}
-                                        onChange={(e) => setData('question', e.target.value)}
+                                        value={question}
+                                        onChange={(e) => setQuestion(e.target.value)}
+                                        disabled={isLoading}
                                         required
                                     />
-                                    {errors.question && <p className="mt-1 text-sm text-red-600">{errors.question}</p>}
                                 </div>
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="p-2"
-                                >
-                                    {processing ? (
-                                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                    ) : (
-                                        <>Send</>
-                                    )}
-                                </Button>
+                                {isLoading ? (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="p-2"
+                                        onClick={cancel}
+                                        formNoValidate={true}
+                                    >
+                                        Cancel
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="p-2"
+                                    >
+                                        {isLoading ? (
+                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        ) : (
+                                            <>Send</>
+                                        )}
+                                    </Button>
+                                )}
                             </form>
                         </CardFooter>
                     </Card>
