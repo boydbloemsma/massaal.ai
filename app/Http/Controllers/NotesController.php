@@ -5,19 +5,23 @@ namespace App\Http\Controllers;
 use App\Actions\AnswerQuestionAction;
 use App\Actions\ChunkTextAction;
 use App\Actions\GenerateEmbeddingAction;
+use App\Http\Requests\AskQuestionRequest;
 use App\Http\Requests\ProcessNoteRequest;
 use App\Jobs\GenerateChunkEmbeddingJob;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\NoteQuestion;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 use Prism\Prism\Enums\Provider;
 use Prism\Prism\Prism;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class NotesController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         return Inertia::render('Note/Index');
     }
@@ -25,7 +29,8 @@ class NotesController extends Controller
     public function store(
         ProcessNoteRequest $request,
         ChunkTextAction $chunkTextAction,
-    ) {
+    ): RedirectResponse
+    {
         // Get the validated data
         $validated = $request->validated();
 
@@ -49,7 +54,7 @@ class NotesController extends Controller
         return redirect()->route('notes.show', $note);
     }
 
-    public function show(Note $note)
+    public function show(Note $note): Response
     {
         // Load the note's questions with latest first
         $noteQuestions = $note->questions()->oldest()->get()->map(function ($question) {
@@ -72,15 +77,11 @@ class NotesController extends Controller
     }
 
     public function askQuestion(
-        Request $request,
+        AskQuestionRequest $request,
         Note $note,
         GenerateEmbeddingAction $generateEmbeddingAction
-    )
+    ): StreamedResponse
     {
-        $request->validate([
-            'question' => 'required|string|max:1000',
-        ]);
-
         $question = $request->input('question');
 
         $questionEmbedding = $generateEmbeddingAction->handle($question);
